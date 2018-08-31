@@ -27,6 +27,9 @@ class Tello(object):
     EVENT_VIDEO_FRAME = event.Event('video frame')
     EVENT_VIDEO_DATA = event.Event('video data')
     EVENT_DISCONNECTED = event.Event('disconnected')
+    EVENT_FILE_SIZE = event.Event('filesize')
+    EVENT_FILE_DATA = event.Event('filedata')
+    EVENT_FILE_DONE = event.Event('filedone')
     # internal events
     __EVENT_CONN_REQ = event.Event('conn_req')
     __EVENT_CONN_ACK = event.Event('conn_ack')
@@ -145,7 +148,7 @@ class Tello(object):
 
     def takeoff(self):
         """Takeoff tells the drones to liftoff and start flying."""
-        log.info('takeoff (cmd=0x%02x seq=0x%04x)' % (TAKEOFF_CMD, self.pkt_seq_num))
+        log.info('takemoff (cmd=0x%02x seq=0x%04x)' % (TAKEOFF_CMD, self.pkt_seq_num))
         pkt = Packet(TAKEOFF_CMD)
         pkt.fixup()
         return self.send_packet(pkt)
@@ -451,6 +454,19 @@ class Tello(object):
         elif cmd == TIME_CMD:
             log.debug("recv: time data: %s" % byte_to_hexstring(data))
             self.__publish(event=self.EVENT_TIME, data=data[7:9])
+        elif cmd == FILE_SIZE_MSG:
+            log.debug("recv: ****** file size [0x62]: cmd=0x%02x seq=0x%04x %s" %
+                     (int16(data[5], data[6]), int16(data[7], data[8]), byte_to_hexstring(data)))
+            self.__publish(event=self.EVENT_FILE_SIZE, data=data[9:])
+        elif cmd == FILE_DATA_MSG:
+            log.debug("recv: ****** file size [0x63]: cmd=0x%02x seq=0x%04x %s" %
+                     (int16(data[5], data[6]), int16(data[7], data[8]), byte_to_hexstring(data)))
+            self.__publish(event=self.EVENT_FILE_DATA, data=data[9:-2])
+        elif cmd == FILE_DONE_MSG:
+            log.debug("recv: ****** file size [0x64]: cmd=0x%02x seq=0x%04x %s" %
+                     (int16(data[5], data[6]), int16(data[7], data[8]), byte_to_hexstring(data)))
+            self.__publish(event=self.EVENT_FILE_DONE, data=data[9:])
+
         elif (TAKEOFF_CMD, LAND_CMD, VIDEO_START_CMD, VIDEO_ENCODER_RATE_CMD):
             log.info("recv: ack: cmd=0x%02x seq=0x%04x %s" %
                      (int16(data[5], data[6]), int16(data[7], data[8]), byte_to_hexstring(data)))

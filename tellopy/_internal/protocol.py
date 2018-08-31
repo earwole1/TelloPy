@@ -9,9 +9,14 @@ VIDEO_RATE_QUERY = 40
 LIGHT_MSG = 53
 FLIGHT_MSG = 0x56
 LOG_MSG = 0x1050
+FILE_SIZE_MSG = 0x62
+FILE_DATA_MSG = 0x63
+FILE_DONE_MSG = 0x64
+
 
 VIDEO_ENCODER_RATE_CMD = 0x20
 VIDEO_START_CMD = 0x25
+TAKE_PICTURE_CMD = 0x30
 EXPOSURE_CMD = 0x34
 TIME_CMD = 70
 STICK_CMD = 80
@@ -49,11 +54,11 @@ class Packet(object):
         else:
             self.buf = bytearray([
                 START_OF_PACKET,
-                0, 0,
-                0,
-                pkt_type,
-                (cmd & 0xff), ((cmd >> 8) & 0xff),
-                0, 0])
+                0, 0, # packet size
+                0, # CRC
+                pkt_type, # packetSubType + packetType + to|fromDron
+                (cmd & 0xff), ((cmd >> 8) & 0xff), # message id
+                0, 0]) # sequence
 
     def fixup(self, seq_num=0):
         buf = self.get_buffer()
